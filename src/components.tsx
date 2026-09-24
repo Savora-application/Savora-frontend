@@ -40,3 +40,18 @@ export const money = (value: number | string | null | undefined, currency = "CAD
 export const categories = ["groceries", "dining", "gas", "travel", "transit", "entertainment", "shopping", "recurring-bills", "utilities", "drugstore", "other"]
 
 export const titleCase = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+
+export const nullablePercent = (value: number | string | null | undefined) =>
+  value === null || value === undefined ? "Not published" : `${(Number(value) * 100).toFixed(1)}%`
+
+export function rewardRateLabel(
+  value: number | string | null | undefined,
+  rateType?: "CASHBACK_RATE" | "POINTS_PER_DOLLAR" | "MILES_PER_DOLLAR" | null,
+) {
+  if (value === null || value === undefined) return "Not published"
+  const rate = Number(value)
+  if (rateType === "CASHBACK_RATE") return `${(rate * 100).toFixed(rate * 100 % 1 ? 1 : 0)}%`
+  if (rateType === "MILES_PER_DOLLAR") return `${rate} mi/$`
+  return `${rate}×`
+}

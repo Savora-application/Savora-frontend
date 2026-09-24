@@ -13,6 +13,7 @@ export type RewardRule = {
   category: string
   multiplier: number | string
   earnRate?: number | string | null
+  rateType?: "CASHBACK_RATE" | "POINTS_PER_DOLLAR" | "MILES_PER_DOLLAR" | null
   spendingCap: number | string | null
   capPeriod: string | null
 }
@@ -35,6 +36,7 @@ export type CreditCard = {
   imageUrl?: string | null
   annualFee: number | string | null
   baseRewardRate: number | string | null
+  baseRewardRateType?: "CASHBACK_RATE" | "POINTS_PER_DOLLAR" | "MILES_PER_DOLLAR" | null
   rewardCurrency: string | null
   foreignTransactionFee: number | string | null
   rewardRules: RewardRule[]
