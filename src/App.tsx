@@ -62,7 +62,7 @@ export default function App() {
   if (!user && loading) return <div className="app-loader"><Logo /><span /></div>
   if (!user) return <Auth onAuthenticated={authenticated} />
 
-  const props: ViewProps = { token, user, profile, wallet, cards, loading, refresh, navigate }
+  const props: ViewProps = { token, user, profile, wallet, cards, loading, refresh, navigate, onAccountDeleted: signOut }
   const views: Record<string, React.ReactNode> = {
     dashboard: <Dashboard {...props} />,
     wallet: <WalletView {...props} />,
