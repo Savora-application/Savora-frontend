@@ -34,7 +34,7 @@ export default function Auth({ onAuthenticated }: { onAuthenticated: (result: Au
         <div className="auth-benefits">
           <div><Sparkles /><span><strong>Personalized picks</strong><small>Recommendations built around your spending</small></span></div>
           <div><BarChart3 /><span><strong>Clear reward math</strong><small>See the real value behind every card</small></span></div>
-          <div><ShieldCheck /><span><strong>Your data stays yours</strong><small>Secure, private, and always in your control</small></span></div>
+          <div><ShieldCheck /><span><strong>No bank connections</strong><small>No bank logins, account numbers, or credit-card numbers</small></span></div>
         </div>
       </div>
       <p className="auth-foot">Built for Canadians who want more from their money.</p>
