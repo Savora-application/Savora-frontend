@@ -290,6 +290,12 @@ export function ProfileView({ token, user, profile, loading, refresh }: ViewProp
           <option value="yes">Yes</option>
         </SelectField>
       </div>}
+      {form.annualFeePreference !== "low" && <div className="form-row">
+        <SelectField label="Would you consider switching banks for a better card deal?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </SelectField>
+      </div>}
 
       <h3>What matters to you?</h3>
       <div className="choice-grid">
