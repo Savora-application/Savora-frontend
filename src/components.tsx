@@ -32,11 +32,11 @@ export function LoadingBlock() {
 
 export function CardVisual({ card, small = false }: { card: CreditCard; small?: boolean }) {
   const tone = card.network.toLowerCase().includes("visa") ? "indigo" : card.network.toLowerCase().includes("master") ? "coral" : "green"
-  return <div className={`card-visual ${tone} ${small ? "small" : ""}`}><span className="card-chip" /><span className="card-brand">{card.issuer}</span><strong>{card.name}</strong><div><span>••••  {card.id.slice(-4).toUpperCase()}</span><span>{card.network}</span></div></div>
+  return <div className={`card-visual ${tone} ${small ? "small" : ""}`}><span className="card-chip" /><span className="card-brand">{card.issuer}</span><strong>{card.name}</strong><div><span>Savora card catalog</span><span>{card.network}</span></div></div>
 }
 
 export const money = (value: number | string | null | undefined, currency = "CAD") => new Intl.NumberFormat("en-CA", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(value ?? 0))
 
-export const categories = ["groceries", "restaurants", "gas", "travel", "transit", "entertainment", "shopping", "recurring-bills", "utilities", "drugstores", "other"]
+export const categories = ["groceries", "dining", "gas", "travel", "transit", "entertainment", "shopping", "recurring-bills", "utilities", "drugstore", "other"]
 
 export const titleCase = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
