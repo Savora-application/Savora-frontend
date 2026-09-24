@@ -73,24 +73,246 @@ export function DiscoverView({ token, profile, loading, navigate }: ViewProps) {
   </div>
 }
 
-const emptyProfile: Omit<FinancialProfile, "id" | "userId"> = { name: "", province: "ON", financialGoals: [], spendingPreferences: {}, travelPreferences: {}, rewardPreferences: {}, annualFeePreference: "any" }
+const emptyProfile: Omit<FinancialProfile, "id" | "userId"> = {
+  name: "",
+  province: "ON",
+  financialGoals: [],
+  spendingPreferences: {},
+  travelPreferences: {},
+  rewardPreferences: {},
+  annualFeePreference: "any",
+  bankingRelationships: {},
+  additionalPreferences: {}
+}
 const provinces = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]
-const goalOptions = ["Build an emergency fund", "Travel more", "Pay down debt", "Save for a home", "Maximize rewards", "Invest for the future"]
+const goalOptions = ["Travel more", "Save money", "Build credit", "Save for a home", "Maximize rewards"]
+const bankOptions = [
+  ["rbc", "RBC"],
+  ["td", "TD"],
+  ["cibc", "CIBC"],
+  ["scotiabank", "Scotiabank"],
+  ["bmo", "BMO"],
+  ["national-bank", "National Bank"],
+  ["tangerine", "Tangerine"],
+  ["simplii", "Simplii"],
+] as const
+const profileSpendCategories = [
+  ["groceries", "Groceries"],
+  ["dining", "Dining / restaurants"],
+  ["gas", "Gas"],
+  ["transit", "Transit"],
+  ["recurring-bills", "Recurring bills"],
+  ["travel", "Travel"],
+  ["shopping", "Shopping"],
+  ["other", "Other"],
+] as const
 
 export function ProfileView({ token, user, profile, loading, refresh }: ViewProps) {
-  const initial = useMemo(() => profile ? { ...emptyProfile, ...profile, income: profile.income ?? undefined, monthlyIncome: profile.monthlyIncome ?? undefined, monthlyExpenses: profile.monthlyExpenses ?? undefined, monthlySavings: profile.monthlySavings ?? undefined } : emptyProfile, [profile])
+  const initial = useMemo(() => profile
+    ? {
+        ...emptyProfile,
+        ...profile,
+        annualPersonalIncome: profile.annualPersonalIncome ?? undefined,
+        annualHouseholdIncome: profile.annualHouseholdIncome ?? undefined,
+        monthlyExpenses: profile.monthlyExpenses ?? undefined,
+        monthlySavings: profile.monthlySavings ?? undefined,
+        spendingPreferences: profile.spendingPreferences ?? {},
+        travelPreferences: profile.travelPreferences ?? {},
+        bankingRelationships: profile.bankingRelationships ?? {},
+        additionalPreferences: profile.additionalPreferences ?? {},
+      }
+    : emptyProfile, [profile])
   const [form, setForm] = useState(initial)
   const [email, setEmail] = useState(user.email)
   const [busy, setBusy] = useState("")
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null)
-  const update = (key: string, value: unknown) => setForm((current) => ({ ...current, [key]: value }))
-  function toggleGoal(goal: string) { update("financialGoals", form.financialGoals.includes(goal) ? form.financialGoals.filter((item) => item !== goal) : [...form.financialGoals, goal]) }
-  async function saveProfile(event: FormEvent) { event.preventDefault(); setBusy("profile"); setMessage(null); try { await api.saveProfile(token, { ...form, income: form.income === "" ? undefined : Number(form.income), monthlyIncome: form.monthlyIncome === "" ? undefined : Number(form.monthlyIncome), monthlyExpenses: form.monthlyExpenses === "" ? undefined : Number(form.monthlyExpenses), monthlySavings: form.monthlySavings === "" ? undefined : Number(form.monthlySavings) }); await refresh(); setMessage({ type: "success", text: "Your financial profile is up to date." }) } catch (caught) { setMessage({ type: "error", text: caught instanceof ApiError ? caught.message : "Unable to save your profile" }) } finally { setBusy("") } }
-  async function saveEmail(event: FormEvent) { event.preventDefault(); setBusy("email"); setMessage(null); try { await api.updateUser(token, email.trim().toLowerCase()); await refresh(); setMessage({ type: "success", text: "Your email has been updated." }) } catch (caught) { setMessage({ type: "error", text: caught instanceof ApiError ? caught.message : "Unable to update your email" }) } finally { setBusy("") } }
+
+  const update = (key: string, value: unknown) =>
+    setForm((current) => ({ ...current, [key]: value }))
+
+  const numberValue = (value: unknown) =>
+    value === "" || value === undefined || value === null ? undefined : Number(value)
+
+  function toggleGoal(goal: string) {
+    update(
+      "financialGoals",
+      form.financialGoals.includes(goal)
+        ? form.financialGoals.filter((item) => item !== goal)
+        : [...form.financialGoals, goal],
+    )
+  }
+
+  function toggleBank(slug: string) {
+    setForm((current) => {
+      const next = { ...current.bankingRelationships }
+      if (next[slug]?.hasAccount) delete next[slug]
+      else next[slug] = { hasAccount: true }
+      return { ...current, bankingRelationships: next }
+    })
+  }
+
+  function updateSpend(category: string, value: string) {
+    setForm((current) => {
+      const next = { ...current.spendingPreferences }
+      if (value === "") delete next[category]
+      else next[category] = Math.max(0, Number(value))
+      return { ...current, spendingPreferences: next }
+    })
+  }
+
+  async function saveProfile(event: FormEvent) {
+    event.preventDefault()
+    setBusy("profile")
+    setMessage(null)
+    try {
+      await api.saveProfile(token, {
+        ...form,
+        annualPersonalIncome: numberValue(form.annualPersonalIncome),
+        annualHouseholdIncome: numberValue(form.annualHouseholdIncome),
+        monthlyExpenses: numberValue(form.monthlyExpenses),
+        monthlySavings: numberValue(form.monthlySavings),
+        travelPreferences: {
+          annualForeignCurrencySpendCad: numberValue(form.travelPreferences.annualForeignCurrencySpendCad),
+          travelsPerYear: numberValue(form.travelPreferences.travelsPerYear),
+        },
+        additionalPreferences: {
+          ...form.additionalPreferences,
+          approximateSavingsCad: numberValue(form.additionalPreferences.approximateSavingsCad),
+          maxAnnualFeeCad: numberValue(form.additionalPreferences.maxAnnualFeeCad),
+        },
+      })
+      await refresh()
+      setMessage({ type: "success", text: "Your answers are saved. Savora can now personalize your recommendations." })
+    } catch (caught) {
+      setMessage({ type: "error", text: caught instanceof ApiError ? caught.message : "Unable to save your profile" })
+    } finally {
+      setBusy("")
+    }
+  }
+
+  async function saveEmail(event: FormEvent) {
+    event.preventDefault()
+    setBusy("email")
+    setMessage(null)
+    try {
+      await api.updateUser(token, email.trim().toLowerCase())
+      await refresh()
+      setMessage({ type: "success", text: "Your email has been updated." })
+    } catch (caught) {
+      setMessage({ type: "error", text: caught instanceof ApiError ? caught.message : "Unable to update your email" })
+    } finally {
+      setBusy("")
+    }
+  }
+
   if (loading) return <LoadingBlock />
-  return <div className="page-content narrow"><header className="page-header"><div><span className="eyebrow">Personalize Savora</span><h1>Your profile</h1><p>Help us make recommendations that actually fit.</p></div></header>{message && <Notice type={message.type} onClose={() => setMessage(null)}>{message.text}</Notice>}
-    <form className="panel profile-form" onSubmit={saveProfile}><div className="panel-heading"><div><span className="eyebrow">About you</span><h2>Financial profile</h2></div><Pencil size={20} /></div><div className="form-row"><Field label="Full name" value={form.name} onChange={(event) => update("name", event.target.value)} required /><SelectField label="Province or territory" value={form.province} onChange={(event) => update("province", event.target.value)}>{provinces.map((item) => <option key={item}>{item}</option>)}</SelectField></div><div className="form-row"><SelectField label="Employment status" value={form.employmentStatus ?? ""} onChange={(event) => update("employmentStatus", event.target.value || undefined)}><option value="">Prefer not to say</option><option>Employed</option><option>Self-employed</option><option>Student</option><option>Retired</option><option>Not employed</option></SelectField><SelectField label="Annual fee preference" value={form.annualFeePreference} onChange={(event) => update("annualFeePreference", event.target.value)}><option value="none">No annual fee</option><option value="low">Low annual fee</option><option value="any">Open to any fee</option></SelectField></div><h3>Monthly snapshot</h3><div className="form-row three"><Field label="Income" type="number" min="0" step="0.01" value={form.monthlyIncome ?? ""} onChange={(event) => update("monthlyIncome", event.target.value)} placeholder="$0" /><Field label="Expenses" type="number" min="0" step="0.01" value={form.monthlyExpenses ?? ""} onChange={(event) => update("monthlyExpenses", event.target.value)} placeholder="$0" /><Field label="Savings" type="number" min="0" step="0.01" value={form.monthlySavings ?? ""} onChange={(event) => update("monthlySavings", event.target.value)} placeholder="$0" /></div><h3>What are you working toward?</h3><div className="choice-grid">{goalOptions.map((goal) => <button type="button" className={form.financialGoals.includes(goal) ? "selected" : ""} onClick={() => toggleGoal(goal)} key={goal}>{form.financialGoals.includes(goal) && <Check size={15} />}{goal}</button>)}</div><div className="form-actions"><Button type="submit" busy={busy === "profile"}>Save profile</Button></div></form>
-    <form className="panel account-form" onSubmit={saveEmail}><div className="panel-heading"><div><span className="eyebrow">Account</span><h2>Sign-in details</h2></div></div><div className="account-row"><Field label="Email address" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /><Button type="submit" variant="secondary" busy={busy === "email"}>Update email</Button></div></form>
+
+  return <div className="page-content narrow">
+    <header className="page-header">
+      <div>
+        <span className="eyebrow">Simple profile</span>
+        <h1>Tell us about your spending</h1>
+        <p>No bank logins, account numbers, or card numbers. Just a few estimates to personalize Savora.</p>
+      </div>
+    </header>
+
+    {message && <Notice type={message.type} onClose={() => setMessage(null)}>{message.text}</Notice>}
+
+    <form className="panel profile-form" onSubmit={saveProfile}>
+      <div className="panel-heading">
+        <div><span className="eyebrow">About you</span><h2>Basic information</h2></div>
+        <Pencil size={20} />
+      </div>
+
+      <div className="form-row">
+        <Field label="Name" value={form.name} onChange={(event) => update("name", event.target.value)} required />
+        <SelectField label="Province or territory" value={form.province} onChange={(event) => update("province", event.target.value)}>
+          {provinces.map((item) => <option key={item}>{item}</option>)}
+        </SelectField>
+      </div>
+
+      <h3>Income & savings</h3>
+      <p className="section-copy">Approximate amounts are enough. We never ask where the money is held.</p>
+      <div className="form-row three">
+        <Field label="Annual personal income" type="number" min="0" step="100" value={form.annualPersonalIncome ?? ""} onChange={(event) => update("annualPersonalIncome", event.target.value)} placeholder="$0" />
+        <Field label="Annual household income (optional)" type="number" min="0" step="100" value={form.annualHouseholdIncome ?? ""} onChange={(event) => update("annualHouseholdIncome", event.target.value)} placeholder="$0" />
+        <Field label="Approximate savings" type="number" min="0" step="100" value={form.additionalPreferences.approximateSavingsCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, approximateSavingsCad: Number(event.target.value) || undefined } }))} placeholder="$0" />
+      </div>
+
+      <h3>Which banks do you use?</h3>
+      <p className="section-copy">Select bank names only. Savora does not connect to your accounts.</p>
+      <div className="choice-grid">
+        {bankOptions.map(([slug, label]) => {
+          const selected = Boolean(form.bankingRelationships[slug]?.hasAccount)
+          return <button type="button" className={selected ? "selected" : ""} onClick={() => toggleBank(slug)} key={slug}>
+            {selected && <Check size={15} />}{label}
+          </button>
+        })}
+      </div>
+
+      <h3>Typical monthly spending</h3>
+      <p className="section-copy">Rough estimates are fine. Enter only the categories you regularly use.</p>
+      <div className="form-row three spending-grid">
+        {profileSpendCategories.map(([slug, label]) =>
+          <Field key={slug} label={label} type="number" min="0" step="10" value={form.spendingPreferences[slug] ?? ""} onChange={(event) => updateSpend(slug, event.target.value)} placeholder="$0" />
+        )}
+      </div>
+
+      <h3>Travel</h3>
+      <div className="form-row">
+        <Field label="Trips per year" type="number" min="0" step="1" value={form.travelPreferences.travelsPerYear ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, travelsPerYear: Number(event.target.value) || undefined } }))} placeholder="0" />
+        <Field label="Foreign-currency spending per year" type="number" min="0" step="100" value={form.travelPreferences.annualForeignCurrencySpendCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, annualForeignCurrencySpendCad: Number(event.target.value) || undefined } }))} placeholder="$0" />
+      </div>
+
+      <h3>Preferences</h3>
+      <div className="form-row">
+        <SelectField label="Annual fee preference" value={form.annualFeePreference} onChange={(event) => update("annualFeePreference", event.target.value)}>
+          <option value="none">No annual fee</option>
+          <option value="low">Keep the fee low</option>
+          <option value="any">Any fee if the value is worth it</option>
+        </SelectField>
+        {form.annualFeePreference === "low"
+          ? <Field label="Maximum annual fee" type="number" min="0" step="10" value={form.additionalPreferences.maxAnnualFeeCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, maxAnnualFeeCad: Number(event.target.value) || undefined } }))} placeholder="$120" />
+          : <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
+              <option value="">Prefer not to say</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </SelectField>}
+      </div>
+      {form.annualFeePreference === "low" && <div className="form-row">
+        <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
+          <option value="">Prefer not to say</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </SelectField>
+        <SelectField label="Would you consider switching banks for a better card deal?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </SelectField>
+      </div>}
+
+      <h3>What matters to you?</h3>
+      <div className="choice-grid">
+        {goalOptions.map((goal) => <button type="button" className={form.financialGoals.includes(goal) ? "selected" : ""} onClick={() => toggleGoal(goal)} key={goal}>
+          {form.financialGoals.includes(goal) && <Check size={15} />}{goal}
+        </button>)}
+      </div>
+
+      <div className="privacy-note">
+        <strong>Your privacy</strong>
+        <span>Savora only uses the answers you enter here. We do not ask for bank usernames, passwords, account numbers, or credit-card numbers.</span>
+      </div>
+
+      <div className="form-actions"><Button type="submit" busy={busy === "profile"}>Save answers</Button></div>
+    </form>
+
+    <form className="panel account-form" onSubmit={saveEmail}>
+      <div className="panel-heading"><div><span className="eyebrow">Account</span><h2>Sign-in details</h2></div></div>
+      <div className="account-row">
+        <Field label="Email address" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+        <Button type="submit" variant="secondary" busy={busy === "email"}>Update email</Button>
+      </div>
+    </form>
   </div>
 }
 
