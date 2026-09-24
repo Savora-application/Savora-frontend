@@ -4,7 +4,7 @@ import { api, ApiError } from "./api"
 import { Button, CardVisual, EmptyState, Field, LoadingBlock, Notice, SelectField, categories, money, nullablePercent, rewardRateLabel, titleCase } from "./components"
 import type { CreditCard, FinancialProfile, PurchaseAnalysis, Recommendation, User, WalletCard } from "./types"
 
-export type ViewProps = { token: string; user: User; profile: FinancialProfile | null; wallet: WalletCard[]; cards: CreditCard[]; loading: boolean; refresh: () => Promise<void>; navigate: (page: string) => void }
+export type ViewProps = { token: string; user: User; profile: FinancialProfile | null; wallet: WalletCard[]; cards: CreditCard[]; loading: boolean; refresh: () => Promise<void>; navigate: (page: string) => void; onAccountDeleted: () => Promise<void> }
 
 export function Dashboard({ profile, wallet, loading, navigate }: ViewProps) {
   if (loading) return <LoadingBlock />
@@ -107,7 +107,7 @@ const profileSpendCategories = [
   ["other", "Other"],
 ] as const
 
-export function ProfileView({ token, user, profile, loading, refresh }: ViewProps) {
+export function ProfileView({ token, user, profile, loading, refresh, onAccountDeleted }: ViewProps) {
   const initial = useMemo(() => profile
     ? {
         ...emptyProfile,
@@ -201,6 +201,20 @@ export function ProfileView({ token, user, profile, loading, refresh }: ViewProp
     } catch (caught) {
       setMessage({ type: "error", text: caught instanceof ApiError ? caught.message : "Unable to update your email" })
     } finally {
+      setBusy("")
+    }
+  }
+
+  async function deleteAccount() {
+    const confirmed = window.confirm("Delete your Savora account and saved profile? This cannot be undone.")
+    if (!confirmed) return
+    setBusy("delete-account")
+    setMessage(null)
+    try {
+      await api.deleteUser(token)
+      await onAccountDeleted()
+    } catch (caught) {
+      setMessage({ type: "error", text: caught instanceof ApiError ? caught.message : "Unable to delete your account" })
       setBusy("")
     }
   }
@@ -319,6 +333,12 @@ export function ProfileView({ token, user, profile, loading, refresh }: ViewProp
         <Button type="submit" variant="secondary" busy={busy === "email"}>Update email</Button>
       </div>
     </form>
+
+    <section className="panel account-form">
+      <div className="panel-heading"><div><span className="eyebrow">Account control</span><h2>Delete account</h2></div></div>
+      <p className="section-copy">Permanently delete your Savora account, profile, wallet selections, and saved app data.</p>
+      <div className="form-actions"><Button type="button" variant="danger" busy={busy === "delete-account"} onClick={deleteAccount}>Delete account</Button></div>
+    </section>
   </div>
 }
 
