@@ -886,3 +886,33 @@ svg { flex-shrink: 0; vertical-align: middle; }
     transition-duration: .01ms !important;
   }
 }
+
+
+.optional-details {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+}
+.optional-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.optional-details summary::-webkit-details-marker { display: none; }
+.optional-details summary span { display: grid; gap: 2px; }
+.optional-details summary strong { font-size: .9rem; }
+.optional-details summary small { font-weight: 400; }
+.optional-details summary svg { transition: transform .18s ease; }
+.optional-details[open] summary svg { transform: rotate(90deg); }
+.optional-details-body {
+  display: grid;
+  gap: 18px;
+  padding: 8px 0 18px;
+}
+.optional-details-body h3 {
+  margin-top: 6px;
+}
