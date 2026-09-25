@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react"
-import { ArrowRight, Bot, Check, ChevronRight, CircleDollarSign, CreditCard as CardIcon, Lightbulb, MessageCircle, Pencil, Plus, Send, Sparkles, Trash2, TrendingUp, WalletCards, Zap } from "lucide-react"
+import { ArrowRight, Bot, Check, ChevronRight, CreditCard as CardIcon, MessageCircle, Pencil, Plus, Send, Sparkles, Trash2, WalletCards, Zap } from "lucide-react"
 import { api, ApiError } from "./api"
 import { Button, CardVisual, EmptyState, Field, LoadingBlock, Notice, SelectField, categories, money, nullablePercent, rewardRateLabel, titleCase } from "./components"
 import type { CreditCard, FinancialProfile, PurchaseAnalysis, Recommendation, User, WalletCard } from "./types"
@@ -9,24 +9,59 @@ export type ViewProps = { token: string; user: User; profile: FinancialProfile |
 export function Dashboard({ profile, wallet, loading, navigate }: ViewProps) {
   if (loading) return <LoadingBlock />
   const firstName = profile?.name.split(" ")[0] ?? "there"
-  const bestRules = wallet.flatMap((item) => item.creditCard.rewardRules.map((rule) => ({ ...rule, card: item.creditCard.name }))).sort((a, b) => Number(b.earnRate ?? b.multiplier) - Number(a.earnRate ?? a.multiplier)).slice(0, 3)
   return <div className="page-content">
-    <header className="page-header"><div><span className="eyebrow">Your rewards command centre</span><h1>Good to see you, {firstName}.</h1><p>Here’s how your wallet is working for you.</p></div><Button onClick={() => navigate("analyze")}><Zap size={18} />Analyze a purchase</Button></header>
-    {!profile && <Notice type="info">Complete your financial profile to unlock personalized card recommendations. <button className="link-button" onClick={() => navigate("profile")}>Set it up</button></Notice>}
+    <header className="page-header">
+      <div>
+        <span className="eyebrow">Overview</span>
+        <h1>Hi, {firstName}.</h1>
+        <p>Keep your cards simple. Savora handles the reward math.</p>
+      </div>
+      <Button onClick={() => navigate("analyze")}>Analyze purchase</Button>
+    </header>
+
+    {!profile && <Notice type="info">Complete your profile to get personalized recommendations. <button className="link-button" onClick={() => navigate("profile")}>Set it up</button></Notice>}
+
     <section className="metric-grid">
-      <article className="metric-card featured"><div className="metric-icon"><WalletCards /></div><span>Cards in your wallet</span><strong>{wallet.length}</strong><small>{wallet.length ? "Ready for smarter spending" : "Add a card to get started"}</small></article>
-      <article className="metric-card"><div className="metric-icon"><TrendingUp /></div><span>Top reward rate</span><strong>{bestRules[0] ? rewardRateLabel(bestRules[0].earnRate ?? bestRules[0].multiplier, bestRules[0].rateType) : "—"}</strong><small>{bestRules[0] ? `On ${titleCase(bestRules[0].category)}` : "Build your wallet"}</small></article>
-      <article className="metric-card"><div className="metric-icon"><CircleDollarSign /></div><span>Annual fees</span><strong>{money(wallet.reduce((sum, item) => sum + Number(item.creditCard.annualFee), 0))}</strong><small>Across active cards</small></article>
-    </section>
-    <section className="dashboard-grid">
-      <article className="panel"><div className="panel-heading"><div><span className="eyebrow">Your wallet</span><h2>Cards at a glance</h2></div><button className="text-action" onClick={() => navigate("wallet")}>View all <ChevronRight size={16} /></button></div>
-        {wallet.length ? <div className="wallet-preview">{wallet.slice(0, 2).map((item) => <div className="wallet-preview-row" key={item.id}><CardVisual card={item.creditCard} small /><div><strong>{item.nickname || item.creditCard.name}</strong><span>{item.creditCard.issuer}</span><small>{rewardRateLabel(item.creditCard.baseRewardRate, item.creditCard.baseRewardRateType)} base earn</small></div></div>)}</div> : <EmptyState icon={<CardIcon />} title="Your wallet is empty" copy="Add the cards you already carry to start comparing rewards." action={<Button onClick={() => navigate("wallet")}><Plus size={17} />Add a card</Button>} />}
+      <article className="metric-card featured">
+        <span>Wallet</span>
+        <strong>{wallet.length}</strong>
+        <small>{wallet.length === 1 ? "card added" : "cards added"}</small>
       </article>
-      <article className="panel insight-panel"><div className="panel-heading"><div><span className="eyebrow">Best in your wallet</span><h2>Top earning categories</h2></div><Sparkles /></div>
-        {bestRules.length ? <div className="rule-list">{bestRules.map((rule, index) => <div key={`${rule.id}-${index}`}><span className="rank">{index + 1}</span><div><strong>{titleCase(rule.category)}</strong><small>{rule.card}</small></div><b>{rewardRateLabel(rule.earnRate ?? rule.multiplier, rule.rateType)}</b></div>)}</div> : <EmptyState icon={<Lightbulb />} title="Insights are waiting" copy="Add cards to see where your wallet earns the most." />}
+      <article className="metric-card">
+        <span>Annual fees</span>
+        <strong>{money(wallet.reduce((sum, item) => sum + Number(item.creditCard.annualFee ?? 0), 0))}</strong>
+        <small>Across your wallet</small>
+      </article>
+      <article className="metric-card">
+        <span>Next step</span>
+        <strong>{profile ? "Ready" : "Profile"}</strong>
+        <small>{profile ? "Get your top card picks" : "Add a few basic details"}</small>
       </article>
     </section>
-    <section className="quick-section"><span className="eyebrow">Quick actions</span><div className="quick-grid"><button onClick={() => navigate("analyze")}><Zap /><span><strong>Which card should I use?</strong><small>Compare your wallet for a purchase</small></span><ArrowRight /></button><button onClick={() => navigate("discover")}><Sparkles /><span><strong>Find my next card</strong><small>Get picks based on your profile</small></span><ArrowRight /></button><button onClick={() => navigate("assistant")}><MessageCircle /><span><strong>Ask Savora</strong><small>Talk to your financial assistant</small></span><ArrowRight /></button></div></section>
+
+    <section className="panel">
+      <div className="panel-heading">
+        <div><span className="eyebrow">Your cards</span><h2>Wallet</h2></div>
+        <button className="text-action" onClick={() => navigate("wallet")}>View all <ChevronRight size={16} /></button>
+      </div>
+      {wallet.length
+        ? <div className="wallet-preview">{wallet.slice(0, 3).map((item) =>
+            <div className="wallet-preview-row" key={item.id}>
+              <CardVisual card={item.creditCard} small />
+              <div><strong>{item.nickname || item.creditCard.name}</strong><small>{item.creditCard.issuer}</small></div>
+            </div>
+          )}</div>
+        : <EmptyState icon={<CardIcon />} title="No cards yet" copy="Add the card names you already use. No card numbers or account details." action={<Button onClick={() => navigate("wallet")}><Plus size={17} />Add a card</Button>} />}
+    </section>
+
+    <section className="quick-section">
+      <span className="eyebrow">Do something</span>
+      <div className="quick-grid">
+        <button onClick={() => navigate("analyze")}><Zap /><span><strong>Choose a card</strong><small>Best card for a purchase</small></span><ArrowRight /></button>
+        <button onClick={() => navigate("discover")}><Sparkles /><span><strong>Get recommendations</strong><small>Your top card picks</small></span><ArrowRight /></button>
+        <button onClick={() => navigate("assistant")}><MessageCircle /><span><strong>Ask Savora</strong><small>Simple answers about your cards</small></span><ArrowRight /></button>
+      </div>
+    </section>
   </div>
 }
 
@@ -68,8 +103,8 @@ export function DiscoverView({ token, profile, loading, navigate }: ViewProps) {
   const [error, setError] = useState("")
   async function load() { setBusy(true); setError(""); try { setItems(await api.recommendations(token)) } catch (caught) { setError(caught instanceof ApiError ? caught.message : "Unable to load recommendations") } finally { setBusy(false) } }
   if (loading) return <LoadingBlock />
-  return <div className="page-content"><header className="page-header"><div><span className="eyebrow">Made for you</span><h1>Discover cards</h1><p>Personalized recommendations based on how you spend.</p></div>{profile && <Button onClick={load} busy={busy}><Sparkles size={18} />{items ? "Refresh picks" : "Get my picks"}</Button>}</header>
-    {!profile ? <div className="panel"><EmptyState icon={<Sparkles />} title="Tell us about your goals first" copy="Your profile gives Savora the information it needs to compare cards for your spending." action={<Button onClick={() => navigate("profile")}>Complete profile</Button>} /></div> : <>{error && <Notice>{error}</Notice>}{items === null ? <div className="discover-hero panel"><div className="big-icon"><Sparkles /></div><h2>Cards that fit your life, not the other way around.</h2><p>We’ll compare available cards against your expenses and spending preferences, then rank the three with the strongest estimated annual value.</p><Button onClick={load} busy={busy}>See my recommendations <ArrowRight size={18} /></Button></div> : items.length ? <div className="recommendation-grid">{items.map((item) => <article className={`panel recommendation-card ${item.rank === 1 ? "top" : ""}`} key={item.card.id}><div className="recommendation-rank">#{item.rank}{item.rank === 1 && <span>Best match</span>}</div><div><span className="eyebrow">{item.card.issuer}</span><h2>{item.card.name}</h2><p>{item.card.network}</p></div><div className="annual-value"><small>Estimated value after annual fee</small><strong>{money(item.estimatedOngoingValue ?? item.estimatedAnnualValue)}</strong><span>Rewards value: {money(item.estimatedRewards)} · Fee: {money(item.effectiveAnnualFee ?? item.annualFee)}</span>{item.firstYearValue !== null && item.firstYearValue !== undefined && <span>Estimated first year: {money(item.firstYearValue)}</span>}</div><div className="reason-list"><span><Check size={15} />Eligibility: {titleCase(item.eligibility.toLowerCase())}</span>{item.reasons.map((reason) => <span key={reason}><Check size={15} />{reason}</span>)}{item.drawbacks.map((drawback) => <span className="drawback" key={drawback}>− {drawback}</span>)}</div>{item.card.applicationUrl && <a className="button secondary" href={item.card.applicationUrl} target="_blank" rel="noreferrer">View card <ArrowRight size={16} /></a>}</article>)}</div> : <div className="panel"><EmptyState icon={<Check />} title="Your wallet has it covered" copy="There are no additional active cards to recommend right now." /></div>}</>}
+  return <div className="page-content"><header className="page-header"><div><span className="eyebrow">Recommendations</span><h1>Your top cards.</h1><p>Based on the information you entered.</p></div>{profile && <Button onClick={load} busy={busy}><Sparkles size={18} />{items ? "Refresh picks" : "Get my picks"}</Button>}</header>
+    {!profile ? <div className="panel"><EmptyState icon={<Sparkles />} title="Tell us about your goals first" copy="Your profile gives Savora the information it needs to compare cards for your spending." action={<Button onClick={() => navigate("profile")}>Complete profile</Button>} /></div> : <>{error && <Notice>{error}</Notice>}{items === null ? <div className="discover-hero panel"><div className="big-icon"><Sparkles /></div><h2>Three simple picks.</h2><p>Savora compares the numbers and shows the strongest matches.</p><Button onClick={load} busy={busy}>Show my picks <ArrowRight size={18} /></Button></div> : items.length ? <div className="recommendation-grid">{items.map((item) => <article className={`panel recommendation-card ${item.rank === 1 ? "top" : ""}`} key={item.card.id}><div className="recommendation-rank">#{item.rank}{item.rank === 1 && <span>Best match</span>}</div><div><span className="eyebrow">{item.card.issuer}</span><h2>{item.card.name}</h2><p>{item.card.network}</p></div><div className="annual-value"><small>Estimated annual value</small><strong>{money(item.estimatedOngoingValue ?? item.estimatedAnnualValue)}</strong><span>Rewards {money(item.estimatedRewards)} · Fee {money(item.effectiveAnnualFee ?? item.annualFee)}</span>{item.firstYearValue !== null && item.firstYearValue !== undefined && <span>Estimated first year: {money(item.firstYearValue)}</span>}</div><div className="reason-list"><span><Check size={15} />Eligibility: {titleCase(item.eligibility.toLowerCase())}</span>{item.reasons.map((reason) => <span key={reason}><Check size={15} />{reason}</span>)}{item.drawbacks.map((drawback) => <span className="drawback" key={drawback}>− {drawback}</span>)}</div>{item.card.applicationUrl && <a className="button secondary" href={item.card.applicationUrl} target="_blank" rel="noreferrer">View card <ArrowRight size={16} /></a>}</article>)}</div> : <div className="panel"><EmptyState icon={<Check />} title="Your wallet has it covered" copy="There are no additional active cards to recommend right now." /></div>}</>}
   </div>
 }
 
@@ -272,51 +307,57 @@ export function ProfileView({ token, user, profile, loading, refresh, onAccountD
         )}
       </div>
 
-      <h3>Travel</h3>
-      <div className="form-row">
-        <Field label="Trips per year" type="number" min="0" step="1" value={form.travelPreferences.travelsPerYear ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, travelsPerYear: Number(event.target.value) || undefined } }))} placeholder="0" />
-        <Field label="Foreign-currency spending per year" type="number" min="0" step="100" value={form.travelPreferences.annualForeignCurrencySpendCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, annualForeignCurrencySpendCad: Number(event.target.value) || undefined } }))} placeholder="$0" />
-      </div>
+      <details className="optional-details">
+        <summary>
+          <span><strong>Optional details</strong><small>Travel, fee preferences and goals</small></span>
+          <ChevronRight size={18} />
+        </summary>
+        <div className="optional-details-body">
+          <h3>Travel</h3>
+          <div className="form-row">
+            <Field label="Trips per year" type="number" min="0" step="1" value={form.travelPreferences.travelsPerYear ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, travelsPerYear: Number(event.target.value) || undefined } }))} placeholder="0" />
+            <Field label="Foreign-currency spending per year" type="number" min="0" step="100" value={form.travelPreferences.annualForeignCurrencySpendCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, annualForeignCurrencySpendCad: Number(event.target.value) || undefined } }))} placeholder="$0" />
+          </div>
 
-      <h3>Preferences</h3>
-      <div className="form-row">
-        <SelectField label="Annual fee preference" value={form.annualFeePreference} onChange={(event) => update("annualFeePreference", event.target.value)}>
-          <option value="none">No annual fee</option>
-          <option value="low">Keep the fee low</option>
-          <option value="any">Any fee if the value is worth it</option>
-        </SelectField>
-        {form.annualFeePreference === "low"
-          ? <Field label="Maximum annual fee" type="number" min="0" step="10" value={form.additionalPreferences.maxAnnualFeeCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, maxAnnualFeeCad: Number(event.target.value) || undefined } }))} placeholder="$120" />
-          : <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
+          <h3>Preferences</h3>
+          <div className="form-row">
+            <SelectField label="Annual fee preference" value={form.annualFeePreference} onChange={(event) => update("annualFeePreference", event.target.value)}>
+              <option value="none">No annual fee</option>
+              <option value="low">Keep the fee low</option>
+              <option value="any">Any fee if the value is worth it</option>
+            </SelectField>
+            {form.annualFeePreference === "low"
+              ? <Field label="Maximum annual fee" type="number" min="0" step="10" value={form.additionalPreferences.maxAnnualFeeCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, maxAnnualFeeCad: Number(event.target.value) || undefined } }))} placeholder="$120" />
+              : <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
+                  <option value="">Prefer not to say</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </SelectField>}
+          </div>
+
+          {form.annualFeePreference === "low" && <div className="form-row">
+            <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
               <option value="">Prefer not to say</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
-            </SelectField>}
-      </div>
-      {form.annualFeePreference === "low" && <div className="form-row">
-        <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
-          <option value="">Prefer not to say</option>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </SelectField>
-        <SelectField label="Would you consider switching banks for a better card deal?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </SelectField>
-      </div>}
-      {form.annualFeePreference !== "low" && <div className="form-row">
-        <SelectField label="Would you consider switching banks for a better card deal?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </SelectField>
-      </div>}
+            </SelectField>
+          </div>}
 
-      <h3>What matters to you?</h3>
-      <div className="choice-grid">
-        {goalOptions.map((goal) => <button type="button" className={form.financialGoals.includes(goal) ? "selected" : ""} onClick={() => toggleGoal(goal)} key={goal}>
-          {form.financialGoals.includes(goal) && <Check size={15} />}{goal}
-        </button>)}
-      </div>
+          <div className="form-row">
+            <SelectField label="Would you consider switching banks?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </SelectField>
+          </div>
+
+          <h3>Goals</h3>
+          <div className="choice-grid">
+            {goalOptions.map((goal) => <button type="button" className={form.financialGoals.includes(goal) ? "selected" : ""} onClick={() => toggleGoal(goal)} key={goal}>
+              {form.financialGoals.includes(goal) && <Check size={15} />}{goal}
+            </button>)}
+          </div>
+        </div>
+      </details>
 
       <div className="privacy-note">
         <strong>Your privacy</strong>
