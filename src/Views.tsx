@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react"
-import { ArrowRight, Bot, Check, ChevronRight, CircleDollarSign, CreditCard as CardIcon, Lightbulb, MessageCircle, Pencil, Plus, Send, Sparkles, Trash2, TrendingUp, WalletCards, Zap } from "lucide-react"
+import { ArrowRight, Bot, Check, ChevronRight, CreditCard as CardIcon, MessageCircle, Pencil, Plus, Send, Sparkles, Trash2, WalletCards, Zap } from "lucide-react"
 import { api, ApiError } from "./api"
 import { Button, CardVisual, EmptyState, Field, LoadingBlock, Notice, SelectField, categories, money, nullablePercent, rewardRateLabel, titleCase } from "./components"
 import type { CreditCard, FinancialProfile, PurchaseAnalysis, Recommendation, User, WalletCard } from "./types"
