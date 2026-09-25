@@ -10,8 +10,8 @@ const TOKEN_KEY = "savora_access_token"
 const navItems = [
   { id: "dashboard", label: "Overview", icon: Gauge },
   { id: "wallet", label: "Wallet", icon: WalletCards },
-  { id: "analyze", label: "Purchase analyzer", icon: Zap },
-  { id: "discover", label: "Discover cards", icon: Compass },
+  { id: "analyze", label: "Purchase", icon: Zap },
+  { id: "discover", label: "Recommendations", icon: Compass },
   { id: "assistant", label: "Ask Savora", icon: Bot }
 ]
 
