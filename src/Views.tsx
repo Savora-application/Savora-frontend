@@ -307,51 +307,57 @@ export function ProfileView({ token, user, profile, loading, refresh, onAccountD
         )}
       </div>
 
-      <h3>Travel</h3>
-      <div className="form-row">
-        <Field label="Trips per year" type="number" min="0" step="1" value={form.travelPreferences.travelsPerYear ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, travelsPerYear: Number(event.target.value) || undefined } }))} placeholder="0" />
-        <Field label="Foreign-currency spending per year" type="number" min="0" step="100" value={form.travelPreferences.annualForeignCurrencySpendCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, annualForeignCurrencySpendCad: Number(event.target.value) || undefined } }))} placeholder="$0" />
-      </div>
+      <details className="optional-details">
+        <summary>
+          <span><strong>Optional details</strong><small>Travel, fee preferences and goals</small></span>
+          <ChevronRight size={18} />
+        </summary>
+        <div className="optional-details-body">
+          <h3>Travel</h3>
+          <div className="form-row">
+            <Field label="Trips per year" type="number" min="0" step="1" value={form.travelPreferences.travelsPerYear ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, travelsPerYear: Number(event.target.value) || undefined } }))} placeholder="0" />
+            <Field label="Foreign-currency spending per year" type="number" min="0" step="100" value={form.travelPreferences.annualForeignCurrencySpendCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, travelPreferences: { ...current.travelPreferences, annualForeignCurrencySpendCad: Number(event.target.value) || undefined } }))} placeholder="$0" />
+          </div>
 
-      <h3>Preferences</h3>
-      <div className="form-row">
-        <SelectField label="Annual fee preference" value={form.annualFeePreference} onChange={(event) => update("annualFeePreference", event.target.value)}>
-          <option value="none">No annual fee</option>
-          <option value="low">Keep the fee low</option>
-          <option value="any">Any fee if the value is worth it</option>
-        </SelectField>
-        {form.annualFeePreference === "low"
-          ? <Field label="Maximum annual fee" type="number" min="0" step="10" value={form.additionalPreferences.maxAnnualFeeCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, maxAnnualFeeCad: Number(event.target.value) || undefined } }))} placeholder="$120" />
-          : <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
+          <h3>Preferences</h3>
+          <div className="form-row">
+            <SelectField label="Annual fee preference" value={form.annualFeePreference} onChange={(event) => update("annualFeePreference", event.target.value)}>
+              <option value="none">No annual fee</option>
+              <option value="low">Keep the fee low</option>
+              <option value="any">Any fee if the value is worth it</option>
+            </SelectField>
+            {form.annualFeePreference === "low"
+              ? <Field label="Maximum annual fee" type="number" min="0" step="10" value={form.additionalPreferences.maxAnnualFeeCad ?? ""} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, maxAnnualFeeCad: Number(event.target.value) || undefined } }))} placeholder="$120" />
+              : <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
+                  <option value="">Prefer not to say</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </SelectField>}
+          </div>
+
+          {form.annualFeePreference === "low" && <div className="form-row">
+            <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
               <option value="">Prefer not to say</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
-            </SelectField>}
-      </div>
-      {form.annualFeePreference === "low" && <div className="form-row">
-        <SelectField label="Costco membership" value={form.additionalPreferences.hasCostcoMembership === undefined ? "" : form.additionalPreferences.hasCostcoMembership ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, hasCostcoMembership: event.target.value === "" ? undefined : event.target.value === "yes" } }))}>
-          <option value="">Prefer not to say</option>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </SelectField>
-        <SelectField label="Would you consider switching banks for a better card deal?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </SelectField>
-      </div>}
-      {form.annualFeePreference !== "low" && <div className="form-row">
-        <SelectField label="Would you consider switching banks for a better card deal?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </SelectField>
-      </div>}
+            </SelectField>
+          </div>}
 
-      <h3>What matters to you?</h3>
-      <div className="choice-grid">
-        {goalOptions.map((goal) => <button type="button" className={form.financialGoals.includes(goal) ? "selected" : ""} onClick={() => toggleGoal(goal)} key={goal}>
-          {form.financialGoals.includes(goal) && <Check size={15} />}{goal}
-        </button>)}
-      </div>
+          <div className="form-row">
+            <SelectField label="Would you consider switching banks?" value={form.additionalPreferences.willingToSwitchBanks ? "yes" : "no"} onChange={(event) => setForm((current) => ({ ...current, additionalPreferences: { ...current.additionalPreferences, willingToSwitchBanks: event.target.value === "yes" } }))}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </SelectField>
+          </div>
+
+          <h3>Goals</h3>
+          <div className="choice-grid">
+            {goalOptions.map((goal) => <button type="button" className={form.financialGoals.includes(goal) ? "selected" : ""} onClick={() => toggleGoal(goal)} key={goal}>
+              {form.financialGoals.includes(goal) && <Check size={15} />}{goal}
+            </button>)}
+          </div>
+        </div>
+      </details>
 
       <div className="privacy-note">
         <strong>Your privacy</strong>
