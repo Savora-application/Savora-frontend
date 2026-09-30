@@ -30,9 +30,8 @@ jobs:
         run: npm ci
       - name: Build
         env:
-          VITE_BASE_PATH: /Savora-frontend/
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        run: npm run build
+        run: npm run build -- --base=/Savora-frontend/
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
