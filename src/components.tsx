@@ -1,9 +1,10 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react"
 import { LoaderCircle, X } from "lucide-react"
 import type { CreditCard } from "./types"
+import savoraLogo from "./assets/savora-logo.png"
 
 export function Logo({ compact = false }: { compact?: boolean }) {
-  return <div className="logo"><span className="logo-mark">S</span>{!compact && <span>Savora</span>}</div>
+  return <svg className={`logo${compact ? " logo-compact" : ""}`} viewBox={compact ? "140 480 225 255" : "140 480 980 255"} role="img" aria-label="Savora"><image href={savoraLogo} width="1254" height="1254" /></svg>
 }
 
 export function Button({ children, variant = "primary", busy, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | "danger"; busy?: boolean }) {

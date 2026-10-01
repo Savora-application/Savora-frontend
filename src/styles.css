@@ -90,23 +90,14 @@ small {
 svg { flex-shrink: 0; vertical-align: middle; }
 
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -.04em;
+  display: inline-block;
+  width: 138px;
+  height: 36px;
+  overflow: hidden;
+  mix-blend-mode: multiply;
 }
-.logo-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: #111;
-  color: #fff;
-  font-size: .82rem;
-  font-weight: 700;
+.logo-compact {
+  width: 32px;
 }
 
 .eyebrow {
@@ -846,7 +837,7 @@ svg { flex-shrink: 0; vertical-align: middle; }
     background: rgba(255,255,255,.94);
     backdrop-filter: blur(16px);
   }
-  .mobile-bar .logo-mark { width: 28px; height: 28px; }
+  .mobile-bar .logo { width: 123px; height: 32px; }
   .app-main { margin-left: 0; }
   .scrim {
     position: fixed;
